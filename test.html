@@ -29,7 +29,7 @@ ws.onopen = function() {
 ws.onmessage = function(e) {
     console.log("[onmessage] receive message.");
     var res = JSON.parse(e.data);
-	document.getElementById("image").setAttribute("src", "data:image/jpeg;base64," + res["img64"]);
+	document.getElementById("image").setAttribute("src", res["img"]);
 	document.getElementById("index").innerHTML = res["index"];
 	document.getElementById("indexLenght").innerHTML = res["indexLength"];
 	document.getElementById("timer").innerHTML = res["time"];

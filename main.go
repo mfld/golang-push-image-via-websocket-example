@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -18,7 +16,6 @@ import (
 type Config struct {
 	root  string
 	files []string
-	str   string
 	Date  string
 }
 
@@ -57,8 +54,6 @@ func visit(files *[]string) filepath.WalkFunc {
 	}
 }
 
-// this function should not return/overwrite the value of config.files
-
 func shuffleFiles(config *Config) []string {
 	sfiles := make([]string, len(config.files))
 	copy(sfiles, config.files)
@@ -73,14 +68,6 @@ func shuffleFiles(config *Config) []string {
 	rand.Seed(date)
 	rand.Shuffle(len(sfiles), func(i, j int) { sfiles[i], sfiles[j] = sfiles[j], sfiles[i] })
 	return sfiles
-}
-
-func blubb(config *Config, file string) string {
-	var img64 []byte
-	img64, _ = ioutil.ReadFile(file)
-	config.str = base64.StdEncoding.EncodeToString(img64)
-
-	return config.str
 }
 
 func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +95,6 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 		}
 
 		files := shuffleFiles(config)
-		config.str = blubb(config, files[0])
 
 		res["a"] = "a"
 		log.Println(res)
@@ -116,7 +102,7 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 		timings := []int{15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 45, 45, 60, 60, 300, 300, 300, 300, 300}
 		for i, s := range timings {
 			log.Println(files[i])
-			res["img64"] = config.str
+			res["img"] = files[i]
 			res["time"] = s
 			res["index"] = i + 1
 			res["indexLength"] = len(timings)
@@ -127,7 +113,6 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			config.str = blubb(config, files[i+1])
 			time.Sleep(time.Duration(s) * time.Second)
 		}
 	}

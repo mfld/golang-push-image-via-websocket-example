@@ -1,13 +1,21 @@
-<html lang="zh-TW">
-<head></head>
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		* { background-color: #383838; margin: 0; padding: 0; font-size: 100%; font-weight: bold; color: #c4c4c4; text-align: center; }
+		#image { max-height: 99vh; max-width: 95%; margin: auto; vertical-align: text-top; }
+	</style>
+</head>
 <body>
-<h1>Change image testing via websocket</h1>
-<img id="image" width="700" height="500"/>
+	<h1><span id="index"></span>/<span id="indexLenght"></span> <span id="timer"></span></h1>
+	<img id="image"/>
 </body>
 </html>
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+
 <script type="text/javascript">
-var url = "ws://54.199.229.59:9090/connws/";
+var url = "ws://127.0.0.1:9090/connws/";
 ws = new WebSocket(url);
 
 ws.onopen = function() {
@@ -21,14 +29,38 @@ ws.onopen = function() {
 ws.onmessage = function(e) {
     console.log("[onmessage] receive message.");
     var res = JSON.parse(e.data);
-    $("#image").attr("src", "data:image/jpeg;base64," + res["img64"]);
+	document.getElementById("image").setAttribute("src", "data:image/jpeg;base64," + res["img64"]);
+	document.getElementById("index").innerHTML = res["index"];
+	document.getElementById("indexLenght").innerHTML = res["indexLength"];
+	document.getElementById("timer").innerHTML = res["time"];
+}
+
+ws.readystate = function(e) {
+	console.log("[readystate]")
 }
 
 ws.onclose = function(e) {
     console.log("[onclose] connection closed (" + e.code + ")");
+	ws.close();
 }
 
 ws.onerror = function (e) {
     console.log("[onerror] error!");
 }
+
+document.getElementById('image').onload = function() {
+    console.log("[info] image loaded, start timer");
+
+	var countDown = setInterval(function() {
+		var timer = document.getElementById("timer").innerHTML;
+		if (timer < 1) {
+			clearInterval(countDown);
+			document.getElementById("image").setAttribute("src", "");
+		}
+		if (timer >= 1) {
+			document.getElementById("timer").innerHTML -= 1;
+		}
+	}, 1000);
+}
+
 </script>

@@ -5,11 +5,12 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style>
 		* { background-color: #383838; margin: 0; padding: 0; font-size: 100%; font-weight: bold; color: #c4c4c4; text-align: center; }
-		#image { max-height: 99vh; max-width: 95%; margin: auto; vertical-align: text-top; }
+		#image { max-height: 98vh; max-width: 95%; margin: auto; vertical-align: text-top; }
+		h1 { background-color: #242424; }
 	</style>
 </head>
 <body>
-	<h1><span id="index"></span>/<span id="indexLenght"></span> <span id="timer"></span></h1>
+	<h1><span id="index"></span>/<span id="total"></span> <span id="timer"></span></h1>
 	<img id="image"/>
 </body>
 </html>
@@ -31,7 +32,7 @@ ws.onmessage = function(e) {
     var res = JSON.parse(e.data);
 	document.getElementById("image").setAttribute("src", res["img"]);
 	document.getElementById("index").innerHTML = res["index"];
-	document.getElementById("indexLenght").innerHTML = res["indexLength"];
+	document.getElementById("total").innerHTML = res["total"];
 	document.getElementById("timer").innerHTML = res["time"];
 }
 

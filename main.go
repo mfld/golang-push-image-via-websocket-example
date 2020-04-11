@@ -14,14 +14,15 @@ import (
 )
 
 type Config struct {
-	root  string
-	files []string
-	Date  string
+	root         string
+	files        []string
+	timeSequence []int
 }
 
 func main() {
 	config := &Config{}
 	config.root = "./images"
+	config.timeSequence = []int{15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 45, 45, 60, 60, 300, 300, 300, 300, 300}
 
 	err := filepath.Walk(config.root, visit(&config.files))
 	if err != nil {
@@ -55,23 +56,23 @@ func visit(files *[]string) filepath.WalkFunc {
 }
 
 func shuffleFiles(config *Config) []string {
-	sfiles := make([]string, len(config.files))
-	copy(sfiles, config.files)
+	f := make([]string, len(config.files))
+	copy(f, config.files)
 
 	t := time.Now()
-	today := t.Format("20060102")
-	date, err := strconv.ParseInt(today, 10, 64)
+	day := t.Format("20060102")
+	date, err := strconv.ParseInt(day, 10, 64)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	rand.Seed(date)
-	rand.Shuffle(len(sfiles), func(i, j int) { sfiles[i], sfiles[j] = sfiles[j], sfiles[i] })
-	return sfiles
+	rand.Shuffle(len(f), func(i, j int) { f[i], f[j] = f[j], f[i] })
+	return f
 }
 
 func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
-	ws, err := websocket.Upgrade(w, r, nil, 15000000, 1024)
+	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
 		http.Error(w, "Not a websocket handshake", 400)
 		return
@@ -94,18 +95,17 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		files := shuffleFiles(config)
+		f := shuffleFiles(config)
 
 		res["a"] = "a"
 		log.Println(res)
 
-		timings := []int{15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 45, 45, 60, 60, 300, 300, 300, 300, 300}
-		for i, s := range timings {
-			log.Println(files[i])
-			res["img"] = files[i]
+		for i, s := range config.timeSequence {
+			log.Println(f[i])
+			res["img"] = f[i]
 			res["time"] = s
 			res["index"] = i + 1
-			res["indexLength"] = len(timings)
+			res["total"] = len(config.timeSequence)
 
 			time.Sleep(2 * time.Second)
 			if err = ws.WriteJSON(&res); err != nil {

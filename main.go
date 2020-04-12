@@ -14,15 +14,16 @@ import (
 )
 
 type Config struct {
-	root         string
-	files        []string
-	timeSequence []int
+	root  string
+	files []string
+	seq   []int
 }
 
 func main() {
 	config := &Config{}
 	config.root = "./images"
-	config.timeSequence = []int{15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 45, 45, 60, 60, 300, 300, 300, 300, 300}
+	//config.seq = []int{15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 45, 45, 60, 60, 300, 300, 300, 300, 300}
+	config.seq = []int{1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 4, 4, 6, 6, 30, 30, 30, 30, 30}
 
 	err := filepath.Walk(config.root, visit(&config.files))
 	if err != nil {
@@ -100,12 +101,12 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 		res["a"] = "a"
 		log.Println(res)
 
-		for i, s := range config.timeSequence {
+		for i, s := range config.seq {
 			log.Println(f[i])
 			res["img"] = f[i]
 			res["time"] = s
 			res["index"] = i + 1
-			res["total"] = len(config.timeSequence)
+			res["total"] = len(config.seq)
 
 			time.Sleep(2 * time.Second)
 			if err = ws.WriteJSON(&res); err != nil {
@@ -113,7 +114,14 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			time.Sleep(time.Duration(s) * time.Second)
+			time.Sleep(time.Duration(s)*time.Second + 2)
+
+		}
+
+		// graceful close connection to client
+		if err = ws.Close(); err != nil {
+			fmt.Println("close error: " + err.Error())
+			return
 		}
 	}
 }

@@ -7,6 +7,16 @@
 		* { background-color: #383838; margin: 0; padding: 0; font-size: 100%; font-weight: bold; color: #c4c4c4; text-align: center; }
 		#image { max-height: 98vh; max-width: 95%; margin: auto; vertical-align: text-top; }
 		h1 { background-color: #242424; }
+		.fadeOut { animation: fadeOut ease 1s; }
+
+		@keyframes fadeOut {
+			0% {
+				opacity: 1;
+			}
+			100% {
+				opacity: 0;
+			}
+		}
 	</style>
 </head>
 <body>
@@ -29,6 +39,7 @@ ws.onopen = function() {
 
 ws.onmessage = function(e) {
     console.log("[onmessage] receive message.");
+	document.getElementById("image").setAttribute("src", "");
     var res = JSON.parse(e.data);
 	document.getElementById("image").setAttribute("src", res["img"]);
 	document.getElementById("index").innerHTML = res["index"];
@@ -41,6 +52,7 @@ ws.readystate = function(e) {
 }
 
 ws.onclose = function(e) {
+	document.getElementById("image").setAttribute("src", "");
     console.log("[onclose] connection closed (" + e.code + ")");
 	ws.close();
 }
@@ -51,17 +63,19 @@ ws.onerror = function (e) {
 
 document.getElementById('image').onload = function() {
     console.log("[info] image loaded, start timer");
+	document.getElementById("image").className = "";
 
 	var countDown = setInterval(function() {
 		var timer = document.getElementById("timer").innerHTML;
 		if (timer < 1) {
 			clearInterval(countDown);
-			document.getElementById("image").setAttribute("src", "");
+			document.getElementById("image").className = "fadeOut";
 		}
 		if (timer >= 1) {
 			document.getElementById("timer").innerHTML -= 1;
 		}
 	}, 1000);
+
 }
 
 </script>

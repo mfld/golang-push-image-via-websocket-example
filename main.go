@@ -15,17 +15,18 @@ import (
 	"github.com/koding/multiconfig"
 )
 
+var Files []string
+
 type Config struct {
-	Root  string `default:"./images/"`
-	Seq   string `default:"15,15,15,15,15,15,30,30,30,30,45,45,60,60,300,300,300,300,300"`
-	Files []string
+	Root string `default:"./images/"`
+	Seq  string `default:"15,15,15,15,15,15,30,30,30,30,45,45,60,60,300,300,300,300,300"`
 }
 
 func main() {
 	config := &Config{}
 	multiconfig.New().MustLoad(config)
 
-	err := filepath.Walk(config.Root, visit(&config.Files))
+	err := filepath.Walk(config.Root, visit(&Files))
 	if err != nil {
 		panic(err)
 	}
@@ -56,9 +57,9 @@ func visit(files *[]string) filepath.WalkFunc {
 	}
 }
 
-func shuffleFiles(config *Config) []string {
-	f := make([]string, len(config.Files))
-	copy(f, config.Files)
+func shuffleFiles(files []string) []string {
+	f := make([]string, len(files))
+	copy(f, files)
 
 	t := time.Now()
 	day := t.Format("20060102")
@@ -96,7 +97,7 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		f := shuffleFiles(config)
+		f := shuffleFiles(Files)
 		seq := strings.Split(config.Seq, ",")
 
 		res["a"] = "a"
@@ -116,11 +117,10 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			}
 
 			s, _ := strconv.Atoi(s)
-
 			time.Sleep(time.Duration(s)*time.Second + 2)
 		}
 
-		// graceful close connection to client
+		// close client connection gracefully
 		if err = ws.Close(); err != nil {
 			fmt.Println("close error: " + err.Error())
 			return

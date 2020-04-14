@@ -8,24 +8,24 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/koding/multiconfig"
 )
 
 type Config struct {
-	root  string
-	files []string
-	seq   []int
+	Root  string `default:"./images/"`
+	Seq   string `default:"15,15,15,15,15,15,30,30,30,30,45,45,60,60,300,300,300,300,300"`
+	Files []string
 }
 
 func main() {
 	config := &Config{}
-	config.root = "./images"
-	//config.seq = []int{15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 45, 45, 60, 60, 300, 300, 300, 300, 300}
-	config.seq = []int{1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 4, 4, 6, 6, 30, 30, 30, 30, 30}
+	multiconfig.New().MustLoad(config)
 
-	err := filepath.Walk(config.root, visit(&config.files))
+	err := filepath.Walk(config.Root, visit(&config.Files))
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func visit(files *[]string) filepath.WalkFunc {
 }
 
 func shuffleFiles(config *Config) []string {
-	f := make([]string, len(config.files))
-	copy(f, config.files)
+	f := make([]string, len(config.Files))
+	copy(f, config.Files)
 
 	t := time.Now()
 	day := t.Format("20060102")
@@ -97,16 +97,17 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 		}
 
 		f := shuffleFiles(config)
+		seq := strings.Split(config.Seq, ",")
 
 		res["a"] = "a"
 		log.Println(res)
 
-		for i, s := range config.seq {
+		for i, s := range seq {
 			log.Println(f[i])
 			res["img"] = f[i]
 			res["time"] = s
 			res["index"] = i + 1
-			res["total"] = len(config.seq)
+			res["total"] = len(seq)
 
 			time.Sleep(2 * time.Second)
 			if err = ws.WriteJSON(&res); err != nil {
@@ -114,8 +115,9 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			time.Sleep(time.Duration(s)*time.Second + 2)
+			s, _ := strconv.Atoi(s)
 
+			time.Sleep(time.Duration(s)*time.Second + 2)
 		}
 
 		// graceful close connection to client

@@ -100,9 +100,6 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 		f := shuffleFiles(Files)
 		seq := strings.Split(config.Seq, ",")
 
-		res["a"] = "a"
-		log.Println(res)
-
 		for i, s := range seq {
 			log.Println(f[i])
 			res["img"] = f[i]
@@ -110,7 +107,7 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			res["index"] = i + 1
 			res["total"] = len(seq)
 
-			time.Sleep(2 * time.Second)
+			time.Sleep(4 * time.Second)
 			if err = ws.WriteJSON(&res); err != nil {
 				fmt.Println("watch dir - Write : " + err.Error())
 				return

@@ -75,28 +75,15 @@ func shuffleFiles(files []string) []string {
 
 func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
-	if _, ok := err.(websocket.HandshakeError); ok {
-		http.Error(w, "Not a websocket handshake", 400)
-		return
-	} else if err != nil {
-		log.Println(err)
+	if err != nil {
+		if _, ok := err.(websocket.HandshakeError); !ok {
+			log.Println(err)
+		}
 		return
 	}
 
 	res := map[string]interface{}{}
 	for {
-		if err = ws.ReadJSON(&res); err != nil {
-			if err.Error() == "EOF" {
-				return
-			}
-			// ErrShortWrite means a write accepted fewer bytes than requested then failed to return an explicit error.
-			if err.Error() == "unexpected EOF" {
-				return
-			}
-			fmt.Println("Read : " + err.Error())
-			return
-		}
-
 		f := shuffleFiles(Files)
 		seq := strings.Split(config.Seq, ",")
 
@@ -108,8 +95,9 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			res["total"] = len(seq)
 
 			time.Sleep(4 * time.Second)
+			// TODO: compress this (gz)
 			if err = ws.WriteJSON(&res); err != nil {
-				fmt.Println("watch dir - Write : " + err.Error())
+				fmt.Println("write error: " + err.Error())
 				return
 			}
 
@@ -117,7 +105,7 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(time.Duration(s)*time.Second + 2)
 		}
 
-		// close client connection gracefully
+		// close client connection gracefully. TODO: close should be handled by client.
 		if err = ws.Close(); err != nil {
 			fmt.Println("close error: " + err.Error())
 			return

@@ -1,81 +1,88 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="en-US">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<style>
-		* { background-color: #383838; margin: 0; padding: 0; font-size: 100%; font-weight: bold; color: #c4c4c4; text-align: center; }
-		#image { max-height: 98vh; max-width: 95%; margin: auto; vertical-align: text-top; }
-		h1 { background-color: #242424; }
-		.fadeOut { animation: fadeOut ease 3s; }
-
-		@keyframes fadeOut {
-			0% {
-				opacity: 1;
-			}
-			100% {
-				opacity: 0;
-			}
-		}
-	</style>
-</head>
-<body>
-	<h1><span id="index"></span>/<span id="total"></span> <span id="timer"></span></h1>
-	<img id="image"/>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        html,
+        body {
+            background: #333;
+            font-size: 100%;
+            color: #ccc;
+            overflow: hidden;
+            font-family: Calibri, Candara, Segoe, Segoe UI, Optima, Arial, sans-serif;
+        }
+        #time,
+        main {
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          height: 95vh;
+        }
+        #time {
+          font-size: 5vh;
+          height: 5vh;
+        }
+        #image {
+          max-width: 95%;
+          max-height: 90vh;
+        }
+    </style>
+  </head>
+  <body>
+      <div id="time"></div>
+      <main><img id="image" /></main>
+  </body>
 </html>
 
 <script type="text/javascript">
-var url = "ws://127.0.0.1:9090/connws/";
-ws = new WebSocket(url);
+  var url = "ws://grasp:9090/connws/";
+  var image = document.getElementById("image");
+  var time = document.getElementById("time");
+  ws = new WebSocket(url);
 
-ws.onopen = function() {
-  console.log("[onopen] connect ws uri.");
-  var data = {
-    "Action" : "requireConnect"
+  ws.onopen = function () {
+    console.log("[onopen] connect ws uri.");
+    var data = {
+        Action: "requireConnect",
+    };
+    ws.send(JSON.stringify(data));
   };
-  ws.send(JSON.stringify(data));
-}
 
-ws.onmessage = function(e) {
-    console.log("[onmessage] receive message.");
-	document.getElementById("image").setAttribute("src", "");
-    var res = JSON.parse(e.data);
-	document.getElementById("image").setAttribute("src", res["img"]);
-	document.getElementById("index").innerHTML = res["index"];
-	document.getElementById("total").innerHTML = res["total"];
-	document.getElementById("timer").innerHTML = res["time"];
-}
+  ws.onmessage = function (e) {
+      console.log("[onmessage] receive message.");
+      var res = JSON.parse(e.data);
+      image.setAttribute("src", res["memo"]);
 
-ws.readystate = function(e) {
-	console.log("[readystate]")
-}
+      setTimeout(function () {
+        time.innerHTML = res["time"];
+        image.setAttribute("src", res["img"]);
+        var countDown = setInterval(function() {
+          if (time.innerHTML < 1) {
+            clearInterval(countDown);
+            time.innerHTML = "";
+          }
+          if (time.innerHTML >= 1) {
+            time.innerHTML -= 1;
+          }
+        }, 1000);
+      }, 3000);
 
-ws.onclose = function(e) {
-	document.getElementById("image").setAttribute("src", "");
+  };
+
+  ws.readystate = function (e) {
+    console.log("[readystate]");
+  };
+
+  ws.onclose = function (e) {
+    document.getElementById("image").setAttribute("src", "");
     console.log("[onclose] connection closed (" + e.code + ")");
-	ws.close();
-}
+    ws.close();
+  };
 
-ws.onerror = function (e) {
+  ws.onerror = function (e) {
     console.log("[onerror] error!");
-}
-
-document.getElementById('image').onload = function() {
-    console.log("[info] image loaded, start timer");
-	document.getElementById("image").className = "";
-
-	var countDown = setInterval(function() {
-		var timer = document.getElementById("timer").innerHTML;
-		if (timer < 1) {
-			clearInterval(countDown);
-			document.getElementById("image").className = "fadeOut";
-		}
-		if (timer >= 1) {
-			document.getElementById("timer").innerHTML -= 1;
-		}
-	}, 1000);
-
-}
+  };
 
 </script>
+

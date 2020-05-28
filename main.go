@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -16,10 +15,12 @@ import (
 )
 
 var Files []string
+var Memos []string
 
 type Config struct {
-	Root string `default:"./images/"`
-	Seq  string `default:"15,15,15,15,15,15,30,30,30,30,45,45,60,60,300,300,300,300,300"`
+	Root      string `default:"./images/"`
+	MemosRoot string `default:"./memos/"`
+	Seq       string `default:"15,15,15,15,15,15,30,30,30,30,45,45,60,60,300,300,300,300,300"`
 }
 
 func main() {
@@ -27,6 +28,11 @@ func main() {
 	multiconfig.New().MustLoad(config)
 
 	err := filepath.Walk(config.Root, visit(&Files))
+	if err != nil {
+		panic(err)
+	}
+
+	err = filepath.Walk(config.MemosRoot, visit(&Memos))
 	if err != nil {
 		panic(err)
 	}
@@ -85,6 +91,7 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 	res := map[string]interface{}{}
 	for {
 		f := shuffleFiles(Files)
+		m := shuffleFiles(Memos)
 		seq := strings.Split(config.Seq, ",")
 
 		for i, s := range seq {
@@ -93,11 +100,13 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			res["time"] = s
 			res["index"] = i + 1
 			res["total"] = len(seq)
+			if i < len(m) {
+				res["memo"] = m[i]
+			}
 
 			time.Sleep(4 * time.Second)
-			// TODO: compress this (gz)
 			if err = ws.WriteJSON(&res); err != nil {
-				fmt.Println("write error: " + err.Error())
+				log.Println("write error: " + err.Error())
 				return
 			}
 
@@ -105,9 +114,8 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(time.Duration(s)*time.Second + 2)
 		}
 
-		// close client connection gracefully. TODO: close should be handled by client.
 		if err = ws.Close(); err != nil {
-			fmt.Println("close error: " + err.Error())
+			log.Println("close error: " + err.Error())
 			return
 		}
 	}

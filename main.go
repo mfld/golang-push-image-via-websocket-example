@@ -108,6 +108,7 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			res["total"] = len(seq)
 
 			time.Sleep(4 * time.Second)
+			// TODO: compress this (gz)
 			if err = ws.WriteJSON(&res); err != nil {
 				fmt.Println("watch dir - Write : " + err.Error())
 				return
@@ -117,7 +118,7 @@ func (config *Config) ConnWs(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(time.Duration(s)*time.Second + 2)
 		}
 
-		// close client connection gracefully
+		// close client connection gracefully. TODO: close should be handled by client.
 		if err = ws.Close(); err != nil {
 			fmt.Println("close error: " + err.Error())
 			return
